@@ -6,7 +6,8 @@ import statsmodels.api as sm
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-
+from sklearn import tree, metrics, ensemble
+import graphviz
 
 class model_poverty_prob:
 
@@ -14,15 +15,54 @@ class model_poverty_prob:
         self.data_str = data_str
         self.target_str = target_str
 
+    def plot_tree(self):
+        tree.export_graphviz(self.model_tree, out_file="model_tree.dot", 
+                    feature_names=self.X_test[self.model_tree.feature_names_in_].columns,
+                    # class_names=['0','1','2'], 
+                    rounded=True, filled=True)
+    
+        # Import model graph
+        with open("model_tree.dot") as f:
+            dot_graph = f.read()
+            display(graphviz.Source(dot_graph))
+
+    def tree_mod(self,col_list,min_samples_leaf=2):
+        self.model_tree = tree.DecisionTreeRegressor(min_samples_leaf=min_samples_leaf)
+        self.model_tree = self.model_tree.fit(self.X_train[col_list], self.y_train)
+
+
+    def forest_mod(self,col_list,n_estimators=100,min_samples_leaf=2):
+        self.model_forest = ensemble.RandomForestRegressor(n_estimators=n_estimators,
+                            min_samples_leaf=min_samples_leaf)
+        self.model_forest = self.model_forest.fit(self.X_train[col_list], self.y_train)
+    
+    def mean_squared_error(self):
+        
+        mse_dic = {}
+        
+        if hasattr(self, 'model_OLS'):
+            mse_dic['OLS'] = metrics.mean_squared_error(self.y_test,self.model_OLS.predict(pd.merge(pd.DataFrame(
+    data={'const' : [1 for i in range(self.X_test.shape[0])]},
+    index=self.X_test[self.model_OLS.params.index[1:]].index),
+         self.X_test[self.model_OLS.params.index[1:]],
+        left_index = True, right_index = True)))
+            
+        if hasattr(self, 'model_tree'):
+            mse_dic['Tree'] = metrics.mean_squared_error(self.y_test,
+                                                         self.model_tree.predict(self.X_test[self.model_tree.feature_names_in_]))
+        if hasattr(self, 'model_forest'):
+            mse_dic['Forest'] = metrics.mean_squared_error(self.y_test,
+                                                         self.model_forest.predict(self.X_test[self.model_forest.feature_names_in_]))
+
+        
+
+
+        self.mse = pd.DataFrame(data = mse_dic, index = ['mean squared error'])
+    
     def tt_split(self):
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.data_df.drop(columns='poverty_probability'), 
                                                                                 self.data_df['poverty_probability'], 
-                                                                                test_size=0.2, 
-                                                                                random_state=42)
-
-        self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(self.X_train, 
-                                                                                self.y_train, 
                                                                                 test_size=0.2, 
                                                                                 random_state=42)
 
@@ -31,7 +71,6 @@ class model_poverty_prob:
         scaler = MinMaxScaler()
 
         self.X_train['age'] = scaler.fit_transform(self.X_train[['age']])
-        self.X_val['age'] = scaler.transform(self.X_val[['age']])
         self.X_test['age'] = scaler.transform(self.X_test[['age']])
         
     # DataFrame mit einer feinere Regel füllen
