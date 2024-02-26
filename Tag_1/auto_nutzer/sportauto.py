@@ -11,6 +11,6 @@ class SportAuto(Auto):
         super().__init__(motor,tuer)
         self.farbe = farbe
     
-    def preis_(self):
+    def preis_rechnen(self):
         self.preis = self.motor*30+self.tuer*400
         return self.preis

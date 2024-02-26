@@ -10,7 +10,7 @@ class Auto:
         self.tuer = tuer
 
 
-    def preis_(self):
+    def preis_rechnen(self):
         """
         Class method: Eine Funktion, die der Klass Instanz modifiziert
         In diesem Fall, wie werden der Motor und Tür Attribute nutzen, um ein Preis zu kalkulieren
@@ -18,5 +18,5 @@ class Auto:
         self.preis = self.motor*10+self.tuer*200
         return self.preis
 
-    def print_preis_(self):
+    def preis_drücken(self):
         print(f"Ein Auto mit einem {self.motor} cc Motor und {self.tuer} Türe kostet {self.preis}€.")
